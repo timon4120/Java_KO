@@ -6,6 +6,8 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.Math;
 
+/* Kamil Orzechowski */
+
 public class Mandelbrot
 {
     public static class Complex
