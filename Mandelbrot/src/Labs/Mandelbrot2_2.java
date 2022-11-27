@@ -7,7 +7,7 @@ import java.io.File;
 import java.io.IOException;
 
 /*
-Nieudana, jak dotąd, wersja wielowątkowego Mandelbrota :/
+Nieudana, jak dotąd, wersja wielowątkowego Mandelbrota :/ UWAGA: II część dot. puli wątków również generuje te same wyniki, tj. obrazek z "ubytkami".
  */
 
 public class Mandelbrot2_2
