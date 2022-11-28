@@ -4,13 +4,10 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 
-/*
-Nieudana, jak dotąd, wersja wielowątkowego Mandelbrota :/ UWAGA: II część dot. puli wątków również generuje te same wyniki, tj. obrazek z "ubytkami".
- */
-
-public class Mandelbrot2_2
+public class Mandelbrot2
 {
     public static class Complex
     {
@@ -62,7 +59,7 @@ public class Mandelbrot2_2
             double y_min = rogi[1];
             double x_max = rogi[2];
             double y_max = rogi[3];
-            BufferedImage image = new BufferedImage (szer, wys, BufferedImage.TYPE_INT_RGB); //Jak zrobię 4 osobne obrazki, to nic dziwnego, że generują się poprawnie.
+            BufferedImage image = new BufferedImage (szer, wys, BufferedImage.TYPE_INT_RGB);
             for(int i = 0; i < szer; i++)
             {
                 for(int j = 0; j < wys; j++)
@@ -72,7 +69,7 @@ public class Mandelbrot2_2
                     Complex cc = new Complex(rea,ima);
                     int numb = this.Compute_N(cc, max_it);
                     float color = 255 - (int)(numb * 255 / max_it);
-                    im.setRGB((int)(i+m*szer),(int)j, Color.HSBtoRGB(color,color,color)); //dla 4 osobnych jest samo (int)i, dla OX
+                    im.setRGB((int)(i+m*szer),(int)j, Color.HSBtoRGB(color,color,color));
                 } //tutaj coś ewidentnie nie działa, bo wątki walczą o dostęp do ustawiania RGB i psują się wzajemnie.
             }
 //            try {ImageIO.write(image, "bmp", new File(tit));}
@@ -85,6 +82,7 @@ public class Mandelbrot2_2
         int x,y,N,i;
         double [] pics;
         String tit;
+        double cnt;
         BufferedImage im;
         public Exec(int x, int y, int N, double [] pics, String tit, BufferedImage im, int i)
         {
@@ -104,33 +102,58 @@ public class Mandelbrot2_2
         }
     }
 
-    public static void main(String[] args)
+    public static void Save(int [] pixels, double [] times)
     {
-        long start = System.nanoTime();
-        double [] part = new double[]{-2.2,-1.2, 0.6, 1.2};
-        int cores = Runtime.getRuntime().availableProcessors();
-        Exec [] exs = new Exec[cores];
-        double dx = (part[2] - part[0]) / cores;
-        int [] pics = new int []{32, 64, 128, 256, 512, 1024, 2048, 4096, 8192};
-        int k = 8;
-        int x = pics[k];
-        int y = pics[k];
-        BufferedImage image = new BufferedImage (x, y, BufferedImage.TYPE_INT_RGB);
-        for (int i = 0; i < cores; i++)
+        try
         {
-            exs[i] = new Exec(x/cores, y, 5, new double[]{part[0],part[1],part[0] + dx, part[3]}, "Rys_" + (i+1) + ".bmp", image, i);
-            exs[i].start();
-            part[0] += dx;
-//            try {
-//                Thread.sleep(5000);
-//            } catch (InterruptedException e) {
-//                e.printStackTrace();
-//            }
+            FileWriter myWriter = new FileWriter("dane.txt");
+            for (int i = 0; i < times.length; i++)
+            {
+                myWriter.write(Math.round(pixels[i] * 100.0) / 100.0 + "," +Math.round(times[i] * 100.0) / 100.0 + "\n");
+            }
+            myWriter.close();
         }
-        try {ImageIO.write(image, "png", new File("Fig_" + k + ".png"));}
-        catch (IOException e) {e.printStackTrace();}
+        catch (IOException e) {e.printStackTrace(); }
+    }
 
-        long stop = System.nanoTime();
-        System.out.println("Czas: " + (stop - start) / 1e9);
+    public static double Repeat(int N, int cores, int x, int y, Exec [] exs) throws InterruptedException
+    {
+        double cnt = 0;
+        for (int m = 0; m < N; m++)
+        {
+            double [] part = new double[]{-2.2,-1.2, 0.6, 1.2};
+            double dx = (part[2] - part[0]) / cores;
+            long start = System.nanoTime();
+            BufferedImage image = new BufferedImage(x, y, BufferedImage.TYPE_INT_RGB);
+            for (int i = 0; i < cores; i++) {
+                exs[i] = new Exec(x / cores, y, 5, new double[]{part[0], part[1], part[0] + dx, part[3]}, "Rys_" + (i + 1) + ".bmp", image, i);
+                exs[i].start();
+                part[0] += dx;
+            }
+            try {
+                ImageIO.write(image, "png", new File("Elo_" + x + ".png"));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            for (Exec e : exs)
+                e.join();
+            long stop = System.nanoTime();
+            cnt += (stop - start)/1e9;
+        }
+        return cnt / N;
+    }
+
+    public static void main(String[] args) throws InterruptedException
+    {
+        int cores = Runtime.getRuntime().availableProcessors();
+        int [] pics = new int []{32, 64, 128, 256, 512, 1024, 2048, 4096, 8192};
+        double [] fin = new double[pics.length];
+        Exec [] exs = new Exec[cores];
+        for (int i = 0; i < pics.length; i++)
+        {
+            double time = Repeat(10, cores, pics[i],pics[i], exs);
+            fin[i] = time;
+        }
+        Save(pics,fin);
     }
 }
