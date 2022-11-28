@@ -7,6 +7,11 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 
+/*
+Niedziałająca do końca poprawnie. Problem zapewne w funkcji Make_picture(). Obrazek z porównaniem czasów, raczej poprawnym, w folderze poziom wyżej. 
+Tutaj jest problem tylko z generowaniem samego obrazka, nie z pomairem czasu
+ */
+
 public class Mandelbrot2
 {
     public static class Complex
