@@ -6,15 +6,9 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-
-/*
-Niedziałająca do końca poprawnie. Problem zapewne w funkcji Make_picture(). Obrazek z porównaniem czasów, raczej poprawnym, w folderze poziom wyżej.
-Tutaj jest problem tylko z generowaniem samego obrazka, nie z pomairem czasu
- */
 
 public class Mandelbrot3
 {
@@ -123,13 +117,13 @@ public class Mandelbrot3
         catch (IOException e) {e.printStackTrace(); }
     }
 
-    public static double Repeat(int N, int cores, int x, int y, ExecutorService ex) throws InterruptedException
+    public static double Repeat(int N, int cores, int x, int y) throws InterruptedException
     {
-//        ExecutorService ex = Executors.newFixedThreadPool(cores*4);
+
         double cnt = 0;
         for (int m = 0; m < N; m++)
         {
-
+            ExecutorService ex = Executors.newFixedThreadPool(cores*4);
             double [] part = new double[]{-2.2,-1.2, 0.6, 1.2};
             double dx = (part[2] - part[0]) / cores;
             long start = System.nanoTime();
@@ -140,7 +134,8 @@ public class Mandelbrot3
                 ex.execute(worker);
                 part[0] += dx;
             }
-
+            ex.shutdown();
+            ex.awaitTermination(1, TimeUnit.MINUTES);
             try {
                 ImageIO.write(image, "png", new File("Pool_rys_" + x + ".png"));
             } catch (IOException e) {
@@ -158,15 +153,13 @@ public class Mandelbrot3
         int cores = Runtime.getRuntime().availableProcessors();
         int [] pics = new int []{32, 64, 128, 256, 512, 1024, 2048, 4096, 8192};
         double [] fin = new double[pics.length];
-        ExecutorService ex = Executors.newFixedThreadPool(cores*4);
+//        ExecutorService ex = Executors.newFixedThreadPool(cores*4);
         for (int i = 0; i < pics.length; i++)
         {
-            double time = Repeat(10, cores, pics[i],pics[i],ex);
+            double time = Repeat(10, cores, pics[i],pics[i]);
             fin[i] = time;
             System.out.println("Rozmiar" + pics[i] + ": " + time);
         }
-        ex.shutdown();
-        ex.awaitTermination(1, TimeUnit.MINUTES);
         Save(pics,fin);
     }
 }
