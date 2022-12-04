@@ -7,11 +7,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 
-/*
-Niedziałająca do końca poprawnie. Problem zapewne w funkcji Make_picture(). Obrazek z porównaniem czasów, raczej poprawnym, w folderze poziom wyżej. 
-Tutaj jest problem tylko z generowaniem samego obrazka, nie z pomairem czasu
- */
-
 public class Mandelbrot2
 {
     public static class Complex
@@ -75,10 +70,8 @@ public class Mandelbrot2
                     int numb = this.Compute_N(cc, max_it);
                     float color = 255 - (int)(numb * 255 / max_it);
                     im.setRGB((int)(i+m*szer),(int)j, Color.HSBtoRGB(color,color,color));
-                } //tutaj coś ewidentnie nie działa, bo wątki walczą o dostęp do ustawiania RGB i psują się wzajemnie.
+                } 
             }
-//            try {ImageIO.write(image, "bmp", new File(tit));}
-//            catch (IOException e) {e.printStackTrace();}
         }
     }
 
@@ -130,18 +123,19 @@ public class Mandelbrot2
             double dx = (part[2] - part[0]) / cores;
             long start = System.nanoTime();
             BufferedImage image = new BufferedImage(x, y, BufferedImage.TYPE_INT_RGB);
-            for (int i = 0; i < cores; i++) {
+            for (int i = 0; i < cores; i++)
+            {
                 exs[i] = new Exec(x / cores, y, 5, new double[]{part[0], part[1], part[0] + dx, part[3]}, "Rys_" + (i + 1) + ".bmp", image, i);
                 exs[i].start();
                 part[0] += dx;
             }
+            for (Exec e : exs)
+                e.join();
             try {
                 ImageIO.write(image, "png", new File("Elo_" + x + ".png"));
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            for (Exec e : exs)
-                e.join();
             long stop = System.nanoTime();
             cnt += (stop - start)/1e9;
         }
